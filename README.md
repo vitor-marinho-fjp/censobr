@@ -6,14 +6,6 @@ Este repositório contém um tutorial detalhado sobre como utilizar o R para cal
 
 O tutorial aborda a utilização do pacote `censobr` para acessar e manipular dados do censo brasileiro, além de usar o `ggplot2` e `plotly` para visualizar esses dados de forma eficiente e interativa. O objetivo é demonstrar como combinar e analisar informações socioeconômicas e geográficas de maneira eficaz, oferecendo insights sobre a distribuição da renda na cidade.
 
-## Estrutura do Repositório
-
-- `tutorial.Rmd`: Um documento R Markdown com o tutorial completo.
-- `data/`: Diretório contendo os datasets utilizados no tutorial.
-- `scripts/`: Scripts R utilizados para análise e visualização de dados.
-- `images/`: Imagens e gráficos gerados durante o tutorial.
-- `README.md`: Este arquivo de instruções.
-
 ## Pré-requisitos
 
 - R e RStudio instalados.
