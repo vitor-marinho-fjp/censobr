@@ -1,0 +1,225 @@
+---
+title: "Dados do Censo Brasileiro"
+subtitle:  'Tutorial Transformação Digital nº 6' 
+descripition: 'Compartilhando o código em R'
+abstract: |
+  Neste tutorial exploramos o pacote censobr que permite o acesso a dados do Censo diretamente no R. 
+author:
+  - name: "[Vitor Marinho](https://github.com/vitor-marinho-fjp)"
+    affiliation: Fundação João Pinheiro/Cedeplar
+    affiliation_url: https://fjp.mg.gov.br/
+  - name: "[Renato Vale](https://github.com/renato-vale)"
+    affiliation: Fundação João Pinheiro
+    affiliation_url: https://fjp.mg.gov.br/
+format: html
+engine: knitr
+theme: Sandstone
+toc: true 
+toc_float: true
+number-sections: true
+lang: pt
+editor: visual
+bibliography: references.bib
+---
+
+**Contato: [transformacao.digital\@fjp.mg.gov.br](mailto:transformacao.digital@fjp.mg.gov.br)**
+
+# Introdução
+
+O pacote `censobr` no R é uma ferramenta para acessar e analisar dados do Censo brasileiro. Este tutorial irá guiá-lo através das funcionalidades básicas de extração dos dados.
+
+## Configuração Inicial
+
+Para começar, instale e carregue os pacotes necessários no RStudio
+
+```{r, warning=FALSE, message=FALSE}
+
+# install.packages("censobr")
+library(tidyverse)
+library(censobr)
+library(geobr)
+library(plotly)
+```
+
+## Explorando o Pacote censobr
+
+`censobr` é um pacote do R para baixar dados do Censo Populacional do Brasil. Ele é construído sobre a plataforma Arrow, permitindo trabalhar com dados do censo maiores que a memória utilizando funções familiares do `dplyr`.
+
+O pacote atualmente inclui 6 funções principais para baixar e ler dados do censo:
+
+1.  [`read_population()`](https://ipeagit.github.io/censobr/reference/read_population.html)
+
+2.  [`read_households()`](https://ipeagit.github.io/censobr/reference/read_households.html)
+
+3.  [`read_mortality()`](https://ipeagit.github.io/censobr/reference/read_mortality.html)
+
+4.  [`read_families()`](https://ipeagit.github.io/censobr/reference/read_families.html)
+
+5.  [`read_emigration()`](https://ipeagit.github.io/censobr/reference/read_emigration.html)
+
+6.  [`read_tracts()`](https://ipeagit.github.io/censobr/reference/read_tracts.html)
+
+Além das funções de auxílio para as bases de dados:
+
+7.  [`data_dictionary()`](https://ipeagit.github.io/censobr/reference/data_dictionary.html)
+
+8.  [`questionnaire()`](https://ipeagit.github.io/censobr/reference/questionnaire.html)
+
+9.  [`interview_manual()`](https://ipeagit.github.io/censobr/reference/interview_manual.html)
+
+**Obs.:** O pacote ainda está em desenvolvimento e foi construído pelo IPEA, dados mais atualizados são adiconados periodicamente [@censobr].
+
+## Exemplos Práticos
+
+Vamos começar com um exemplo simples de informação sobre renda per capta de Belo Horizonte. A função `read_tracts()` que permite coletar variáveis especificas.
+
+Com a função `data_dictionary` é possível recolher as informações das variáveis.
+
+Para auxiliar nas vizualizações vamos utilizar o pacote `geobr`
+
+**1. Carregamento dos Dados dos Municípios:** Carregue os dados do município de Belo Horizonte para o ano de 2010:
+
+```{r}
+
+muni_bh <- geobr::read_municipality(code_muni = 'MG', 
+                                    year = 2010, 
+                                    showProgress = FALSE) |>
+           filter(name_muni == "Belo Horizonte")
+```
+
+-   **`read_municipality`** obtém dados dos municípios de Minas Gerais.
+
+-   O filtro seleciona apenas Belo Horizonte.
+
+**2. Carregamento dos Dados dos Setores Censitários:** Agora, carregue os dados detalhados dos setores censitários:
+
+```{r}
+tracts_sf <- geobr::read_census_tract(code_tract = "MG",
+                                      simplified = FALSE,
+                                      year = 2010,
+                                      showProgress = FALSE)
+
+tracts_sf <- filter(tracts_sf, name_muni == "Belo Horizonte")
+
+```
+
+-   **`read_census_tract`** carrega dados dos setores censitários.
+
+-   **`simplified = FALSE`** mantém todos os detalhes geográficos.
+
+4.  Visualização dos Dados: Crie um mapa dos setores censitários:
+
+```{r}
+
+ggplot() + 
+  geom_sf(data=tracts_sf, fill = 'gray90', color='gray60') + 
+  theme_void()
+
+```
+
+-   **`ggplot()`** inicia a criação do gráfico.
+
+-   **`geom_sf`** adiciona os setores censitários ao gráfico.
+
+-   **`fill`** e **`color`** definem as cores das áreas e bordas.
+
+-   **`theme_void()`** remove elementos desnecessários para focar no mapa.
+
+# Calcuando Renda Per Capta
+
+## Download dos Dados dos Setores Censitários:
+
+1.  **Download dos Dados dos Setores Censitários:**
+    -   `read_tracts(year = 2010, dataset = "Basico", showProgress = FALSE)` carrega dados básicos dos setores censitários para 2010.
+    -   `read_tracts(year = 2010, dataset = "DomicilioRenda", showProgress = FALSE)` carrega dados de renda dos domicílios dos setores censitários para 2010.
+    -   `showProgress = FALSE` desativa a exibição de progresso.
+
+```{r}
+tract_basico <- read_tracts(year = 2010,
+                            dataset = "Basico", 
+                            showProgress = FALSE)
+
+tract_income <- read_tracts(year = 2010,
+                            dataset = "DomicilioRenda", 
+                            showProgress = FALSE)
+
+```
+
+2.  **Seleção das variáveis :**
+    -   `tract_basico |> select('code_tract','V002')` seleciona as colunas `code_tract` (código do setor censitário) e `V002` (população do setor) do dataset básico.
+    -   `tract_income |> select('code_tract','V003')` seleciona as colunas `code_tract` e `V003` (renda total do setor) do dataset de renda.
+
+```{r}
+# select columns
+tract_basico <- tract_basico |> select('code_tract','V002')
+tract_income <- tract_income |> select('code_tract','V003')
+
+```
+
+3.  **Junção dos Dados:**
+    -   `left_join(tract_basico, tract_income)` combina os dois datasets baseando-se no `code_tract`.
+    -   `|> collect()` é utilizado para coletar e consolidar os resultados da junção.
+
+```{r}
+tracts_df <- left_join(tract_basico, tract_income) |> collect()
+
+```
+
+4.  **Cálculo da Renda Per Capita:**
+
+    -   `mutate(income_pc = V003 / V002)` adiciona uma nova coluna `income_pc`, calculando a renda per capita do setor (renda total dividida pela população).
+
+    ```{r}
+    tracts_df <- tracts_df |> mutate(income_pc = V003 / V002)
+    ```
+
+5.  **Junção com Dados Geográficos:**
+
+```{r}
+bh_tracts <- left_join(tracts_sf, tracts_df, by = 'code_tract')
+```
+
+-   `left_join(tracts_sf, tracts_df, by = 'code_tract')` junta o dataframe `tracts_sf` (dados geográficos dos setores censitários de Belo Horizonte) com `tracts_df` (dados socioeconômicos), baseando-se no código do setor censitário.
+
+## Criando um gráfico interativo
+
+Criando um mapa interativo para visualizar a renda per capita por setor censitário em Belo Horizonte no ano de 2010. O código usa `ggplot2` para criar o gráfico e `plotly` para torná-lo interativo.
+
+1.  **Criação do Gráfico Base:**
+    -   `ggplot()` inicializa o gráfico.
+    -   `geom_sf(data = bh_tracts, aes(fill = income_pc), color=NA)` adiciona os setores censitários de Belo Horizonte ao gráfico, com a cor das áreas determinada pela renda per capita (`income_pc`).
+    -   `geom_sf(data = muni_bh, color='gray10', fill=NA)` desenha as fronteiras do município em uma cor escura (`gray10`) sem preenchimento interno.
+
+```{r}
+
+p <- ggplot() +
+  geom_sf(data = bh_tracts, aes(fill = income_pc), color=NA) +
+  geom_sf(data = muni_bh, color='gray10', fill=NA) +
+  labs(subtitle = 'Renda per capita.\nBelo Horizonte, 2010') +
+  scale_fill_viridis_c(name = "Renda per\ncapita (R$)",
+                       labels = scales::number_format(),
+                       option = 'magma',
+                       breaks = c(0, 500, 1e3, 5e3, 1e4, 2e4),
+                       trans = "pseudo_log", na.value = "gray90") +
+  theme_void()
+
+ggplotly(p)
+```
+
+2.  **Adição de Rótulos e Ajustes Visuais:**
+    -   `labs(subtitle = 'Renda per capita.\nBelo Horizonte, 2010')` adiciona um subtítulo ao gráfico.
+    -   `scale_fill_viridis_c(...)`:
+        -   Aplica uma escala de cores 'viridis' (aqui, opção 'magma') para representar a renda per capita.
+        -   `labels = scales::number_format()` formata os números para melhor legibilidade.
+        -   `breaks = c(0, 500, 1e3, 5e3, 1e4, 2e4)` define os pontos em que as cores mudarão no mapa.
+        -   `trans = "pseudo_log"` aplica uma transformação logarítmica para escalonar os dados de renda.
+        -   `na.value = "gray90"` define a cor para valores ausentes como um cinza claro.
+    -   `theme_void()` remove elementos desnecessários do gráfico, focando nos dados.
+3.  **Conversão para Gráfico Interativo:**
+    -   `ggplotly(p)` transforma o gráfico `ggplot` em um gráfico interativo usando a função `ggplotly` do pacote `plotly`. Isso permite que os usuários interajam com o gráfico, como passar o mouse sobre áreas específicas para ver detalhes adicionais.
+
+## Conclusão
+
+Neste tutorial, você aprendeu a combinar dados socioeconômicos e geográficos para calcular e visualizar a renda per capita por setor censitário em Belo Horizonte, utilizando dados do censo de 2010. Através do pacote `censobr` no R. Com a visualização interativa fornecida pelo ggplot2 e plotly.
+
+# Referências
